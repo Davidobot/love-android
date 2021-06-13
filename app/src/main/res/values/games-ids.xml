@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Google Play game services IDs.
+Save this file as res/values/games-ids.xml in your project.
+-->
+<resources>
+  <!-- app_id -->
+  <string name="app_id" translatable="false">74521032529</string>
+  <!-- package_name -->
+  <string name="package_name" translatable="false">net.example.newgame</string>
+  <!-- achievement Gain 100 Gold -->
+  <string name="achievement_gain_100_gold" translatable="false">CgkI0e6yzpUCEAIQAQ</string>
+  <!-- achievement Gain 10 Prem -->
+  <string name="achievement_gain_10_prem" translatable="false">CgkI0e6yzpUCEAIQAg</string>
+</resources>

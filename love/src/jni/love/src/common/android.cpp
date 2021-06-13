@@ -34,6 +34,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <vector>
 
 #include "physfs.h"
 
@@ -723,6 +724,107 @@ bool checkFusedGame(void **physfsIO_Out)
 	// Not found
 	return false;
 }
+
+//region MobSvc
+
+void mobSvcInit(bool allowGDrive)
+{
+	JNIEnv *env = (JNIEnv*) SDL_AndroidGetJNIEnv();
+	jobject activity = (jobject) SDL_AndroidGetActivity();
+	jclass clazz (env->GetObjectClass(activity));
+
+	jmethodID methodID = env->GetMethodID(clazz, "mobSvcInit", "(Z)V");
+	env->CallVoidMethod(activity, methodID, (jboolean) allowGDrive);
+
+	env->DeleteLocalRef(activity);
+	env->DeleteLocalRef(clazz);
+}
+
+std::string mobSvcSignInAwait()
+{
+	JNIEnv *env = (JNIEnv*) SDL_AndroidGetJNIEnv();
+	jobject activity = (jobject) SDL_AndroidGetActivity();
+	jclass clazz (env->GetObjectClass(activity));
+
+	jmethodID methodID = env->GetMethodID(clazz, "mobSvcSignInAwait", "()Ljava/lang/String;");
+	jstring res = (jstring) env->CallObjectMethod(activity, methodID);
+	std::string ret;
+	if(res != NULL) {
+		const char *result = env->GetStringUTFChars(res, 0);
+		if (result) {
+			ret = SDL_strdup(result);
+			env->ReleaseStringUTFChars(res, result);
+		}
+	}
+
+	env->DeleteLocalRef(res);
+	env->DeleteLocalRef(activity);
+	env->DeleteLocalRef(clazz);
+
+	return ret;
+}
+
+bool mobSvcIsSignedIn()
+{
+	JNIEnv *env = (JNIEnv*) SDL_AndroidGetJNIEnv();
+	jobject activity = (jobject) SDL_AndroidGetActivity();
+	jclass clazz (env->GetObjectClass(activity));
+
+	jmethodID methodID = env->GetMethodID(clazz, "mobSvcIsSignedIn", "()Z");
+	jboolean ret = env->CallBooleanMethod(activity, methodID);
+
+	env->DeleteLocalRef(activity);
+	env->DeleteLocalRef(clazz);
+
+	return ret;
+}
+
+void mobSvcShowAchievements()
+{
+	JNIEnv *env = (JNIEnv*) SDL_AndroidGetJNIEnv();
+	jobject activity = (jobject) SDL_AndroidGetActivity();
+	jclass clazz (env->GetObjectClass(activity));
+
+	jmethodID methodID = env->GetMethodID(clazz, "mobSvcShowAchievements", "()V");
+	env->CallVoidMethod(activity, methodID);
+
+	env->DeleteLocalRef(activity);
+	env->DeleteLocalRef(clazz);
+}
+
+std::vector<bool> mobSvcIncrementAchievementProgressAwait(const char *achievementId, int steps, int maxSteps)
+{
+	JNIEnv *env = (JNIEnv*) SDL_AndroidGetJNIEnv();
+	jobject activity = (jobject) SDL_AndroidGetActivity();
+	jclass clazz (env->GetObjectClass(activity));
+
+	jstring jinp1 = (jstring) env->NewStringUTF(((std::string) achievementId).c_str());
+	jint jinp2 = (jint) steps;
+	jint jinp3 = (jint) maxSteps;
+
+	jmethodID methodID = env->GetMethodID(clazz, "mobSvcIncrementAchievementProgressAwait", "(Ljava/lang/String;II)[Z");
+	jbooleanArray resArr = (jbooleanArray) env->CallObjectMethod(activity, methodID, jinp1, jinp2, jinp3);
+
+	std::vector<bool> ret;
+	if(resArr != NULL) {
+		jboolean *bArr = env->GetBooleanArrayElements(resArr, JNI_FALSE);
+		int l = env->GetArrayLength(resArr);
+		for (int i = 0; i < l; i++) {
+			jboolean res = bArr[i];
+			ret.push_back(res);
+		}
+		env->ReleaseBooleanArrayElements(resArr, bArr, 0);
+	}
+
+	env->DeleteLocalRef(jinp1);
+
+	env->DeleteLocalRef(activity);
+	env->DeleteLocalRef(clazz);
+
+	return ret;
+}
+
+//endregion
 
 } // android
 } // love

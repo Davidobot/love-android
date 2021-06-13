@@ -66,6 +66,8 @@ LOCAL_SRC_FILES := \
   $(wildcard ${LOCAL_PATH}/src/modules/video/theora/*.cpp) \
   $(wildcard ${LOCAL_PATH}/src/modules/window/*.cpp) \
   $(wildcard ${LOCAL_PATH}/src/modules/window/sdl/*.cpp) \
+  $(wildcard ${LOCAL_PATH}/src/modules/mobsvc/*.cpp) \
+  $(wildcard ${LOCAL_PATH}/src/modules/mobsvc/sdl/*.cpp) \
   $(wildcard ${LOCAL_PATH}/src/libraries/ddsparse/*.cpp) \
   $(wildcard ${LOCAL_PATH}/src/libraries/Box2D/*.cpp) \
   $(wildcard ${LOCAL_PATH}/src/libraries/Box2D/Collision/*.cpp) \

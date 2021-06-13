@@ -101,6 +101,14 @@ void deinitializeVirtualArchive();
  */
 bool checkFusedGame(void **physfsIO_Out);
 
+// MobSvc
+
+void mobSvcInit(bool allowGDrive);
+std::string mobSvcSignInAwait();
+bool mobSvcIsSignedIn();
+void mobSvcShowAchievements();
+std::vector<bool> mobSvcIncrementAchievementProgressAwait(const char *achievementId, int steps, int maxSteps);
+
 } // android
 } // love
 
