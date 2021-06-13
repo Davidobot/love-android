@@ -15,7 +15,7 @@
       android:hardwareAccelerated="true"
       tools:node="replace" >
       <activity
-        android:name="org.love2d.android.GameActivity"
+        android:name="org.love2d.android.RichGameActivity"
         android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
         android:label="LÖVE for Android"
         android:launchMode="singleTask"
