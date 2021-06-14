@@ -28,6 +28,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.Gravity;
 
 import androidx.annotation.NonNull;
 
@@ -45,6 +46,7 @@ import com.google.android.gms.drive.Drive;
 import com.google.android.gms.games.AchievementsClient;
 import com.google.android.gms.games.AnnotatedData;
 import com.google.android.gms.games.Games;
+import com.google.android.gms.games.GamesClient;
 import com.google.android.gms.games.LeaderboardsClient;
 import com.google.android.gms.games.PlayersClient;
 import com.google.android.gms.games.SnapshotsClient;
@@ -212,6 +214,10 @@ public class RichGameActivity extends GameActivity {
 						mobSvcSignInWait = false;
 					}
 				}); // meanwhile:
+
+				GamesClient gamesClient = Games.getGamesClient(this, mobSvcAccount);
+				gamesClient.setViewForPopups(findViewById(android.R.id.content));
+				gamesClient.setGravityForPopups(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
 				mobSvcAchievementsClient = Games.getAchievementsClient(this, mobSvcAccount);
 				while (mobSvcSignInWait) SystemClock.sleep(100); // await getting player ID
 			}
