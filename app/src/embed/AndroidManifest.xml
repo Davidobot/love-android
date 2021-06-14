@@ -4,8 +4,16 @@
   xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:tools="http://schemas.android.com/tools"
 >
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="18" tools:replace="android:maxSdkVersion" />
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.VIBRATE" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+  <!-- OpenGL ES 2.0 -->
+  <uses-feature android:glEsVersion="0x00020000" />
+  <!-- Touchscreen support -->
+  <uses-feature android:name="android.hardware.touchscreen" android:required="true" />
 
   <application
       android:allowBackup="true"
@@ -14,6 +22,10 @@
       android:usesCleartextTraffic="true"
       android:hardwareAccelerated="true"
       tools:node="replace" >
+      <activity
+          android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"
+          android:screenOrientation="landscape"
+          android:windowSoftInputMode="stateAlwaysHidden|adjustPan" />
       <activity
         android:name="org.love2d.android.RichGameActivity"
         android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
@@ -31,5 +43,10 @@
           <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
         </intent-filter>
       </activity>
+
+      <meta-data android:name="com.google.android.gms.games.APP_ID"
+          android:value="@string/app_id" />
+      <meta-data android:name="com.google.android.gms.version"
+          android:value="@integer/google_play_services_version" />
     </application>
 </manifest> 

@@ -37,6 +37,9 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.drive.Drive;
 import com.google.android.gms.games.AchievementsClient;
@@ -49,6 +52,8 @@ import com.google.android.gms.games.achievement.Achievement;
 import com.google.android.gms.games.achievement.AchievementBuffer;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+
+import static com.google.android.gms.common.GooglePlayServicesUtil.isGooglePlayServicesAvailable;
 
 
 // Pay
@@ -108,6 +113,13 @@ public class RichGameActivity extends GameActivity {
 		}
 	}
 
+	@Override
+	protected void onNewIntent (Intent intent) {
+		/* This function causes trouble, so we shallow it
+		The function in the original activity was finishing the existent intent and creating a new one, causing the game to restart!
+		 */
+	};
+
 	//region MobSvc
 
 	private static final int MOBSVC_SIGN_IN_REQ = 0x10;
@@ -117,8 +129,6 @@ public class RichGameActivity extends GameActivity {
 	private GoogleSignInAccount mobSvcAccount;
 	private PlayersClient mobSvcPlayerClient;
 	private String mobSvcPlayerId;
-	private SnapshotsClient mobSvcSnapshotsClient;
-	private LeaderboardsClient mobSvcLeaderboardsClient;
 	private AchievementsClient mobSvcAchievementsClient;
 
 	private void alertMissingGms() {
@@ -136,35 +146,36 @@ public class RichGameActivity extends GameActivity {
 
 	public void mobSvcInit(final boolean allowGDrive) {
 		// Determine if Google Play Games Services is installed on the device to make this optional. Will treat disabled services as installed.
-		PackageManager pm = context.getPackageManager();
+		GoogleApiAvailability gaa = GoogleApiAvailability.getInstance();
 		//boolean isKindle = (Build.MANUFACTURER.equals("Amazon") && Build.MODEL.equals("Kindle Fire")) || Build.MODEL.startsWith("KF");
-		try
-		{
-			PackageInfo info = pm.getPackageInfo("com.google.android.play.games", PackageManager.GET_ACTIVITIES);
-			String label = (String) info.applicationInfo.loadLabel(pm);
-			mobSvcAvailable = (label != null && !label.equals("Google Play"));
 
-			if(mobSvcAvailable) {
-				GoogleSignInOptions.Builder gsoBuilder = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
-				if(allowGDrive) {
-					gsoBuilder = gsoBuilder.requestScopes(Drive.SCOPE_APPFOLDER);
-				}
-				GoogleSignInOptions gso = gsoBuilder.build();
-				mobSvcClient = GoogleSignIn.getClient(this, gso);
-				Log.d(TAG,"Play Games Services initialised.");
+		if (gaa.isGooglePlayServicesAvailable(this) == ConnectionResult.SUCCESS) {
+			mobSvcAvailable = true;
+
+			GoogleSignInOptions.Builder gsoBuilder = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
+			if(allowGDrive) {
+				gsoBuilder = gsoBuilder.requestScopes(Drive.SCOPE_APPFOLDER);
 			}
+			GoogleSignInOptions gso = gsoBuilder.build();
+			mobSvcClient = GoogleSignIn.getClient(this, gso);
+			Log.d(TAG,"Play Games Services initialised: " + new ConnectionResult(gaa.isGooglePlayServicesAvailable(this)).toString());
+		} else {
+			Log.d(TAG, "Play Game Services unavailable: " + new ConnectionResult(gaa.isGooglePlayServicesAvailable(this)).toString());
 		}
-		catch (PackageManager.NameNotFoundException e) { }
 	}
 
 	boolean mobSvcSignInWait = false;
 	public String mobSvcSignInAwait() {
+		Log.d(TAG, "Signing in");
 		if(mobSvcAvailable && !mobSvcSignInWait) {
 			mobSvcPlayerId = null;
 			mobSvcAccount = GoogleSignIn.getLastSignedInAccount(this);
 			if (mobSvcAccount == null && mobSvcClient != null) {
 				mobSvcSignInWait = true;
-				mobSvcClient.silentSignIn().addOnCompleteListener(this, new OnCompleteListener<GoogleSignInAccount>() {
+				// play around with this; maybe silent sign-in when the last signed-in account is OK
+				Intent intent = mobSvcClient.getSignInIntent();
+				startActivityForResult(intent, MOBSVC_SIGN_IN_REQ);
+				/*mobSvcClient.silentSignIn().addOnCompleteListener(this, new OnCompleteListener<GoogleSignInAccount>() {
 					@Override
 					public void onComplete(@NonNull Task<GoogleSignInAccount> task) {
 						if (task.isSuccessful()) {
@@ -182,7 +193,7 @@ public class RichGameActivity extends GameActivity {
 							});
 						}
 					}
-				});
+				});*/
 			} // meanwhile:
 			while (mobSvcSignInWait) SystemClock.sleep(100); // await, runs forever if the player won't login (just to stay consistent, because iOS provides no deny/fail callback)
 			if(mobSvcAccount != null) {
@@ -201,8 +212,6 @@ public class RichGameActivity extends GameActivity {
 						mobSvcSignInWait = false;
 					}
 				}); // meanwhile:
-				mobSvcSnapshotsClient = Games.getSnapshotsClient(this, mobSvcAccount);
-				mobSvcLeaderboardsClient = Games.getLeaderboardsClient(this, mobSvcAccount);
 				mobSvcAchievementsClient = Games.getAchievementsClient(this, mobSvcAccount);
 				while (mobSvcSignInWait) SystemClock.sleep(100); // await getting player ID
 			}
@@ -211,18 +220,16 @@ public class RichGameActivity extends GameActivity {
 		return null;
 	}
 	private void mobSvcSignInActivityCallback(final int resultCode, final Intent data) {
-		GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-		if (result.isSuccess()) {
-			// The signed in account is stored in the result.
-			mobSvcAccount = result.getSignInAccount();
-		} else {
-			Status status = result.getStatus();
-			String message = status.getStatusMessage();
-			if (message == null || message.isEmpty()) {
-				message = "Unknown Error on Google Sign-In.";
-			}
-			Log.d(TAG, message + " " + status.toString());
+		Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+
+		try {
+			mobSvcAccount = task.getResult(ApiException.class);
+		} catch (ApiException e) {
+			// The ApiException status code indicates the detailed failure reason.
+			// Please refer to the GoogleSignInStatusCodes class reference for more information.
+			Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
 		}
+
 		mobSvcSignInWait = false;
 	}
 

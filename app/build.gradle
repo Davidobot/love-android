@@ -38,7 +38,6 @@ android {
         }
         embed {
             dimension 'mode'
-            applicationIdSuffix '.embed'
         }
     }
     lintOptions {
@@ -50,7 +49,8 @@ dependencies {
     api 'androidx.multidex:multidex:2.0.1'
     api fileTree(dir: 'libs', include: ['*.jar'])
     api 'androidx.appcompat:appcompat:1.2.0'
-    api 'com.google.android.gms:play-services-auth:19.0.0'
-    api 'com.google.android.gms:play-services-games:21.0.0'
+    implementation 'com.google.android.gms:play-services-base:17.6.0'
+    implementation 'com.google.android.gms:play-services-auth:19.0.0'
+    implementation 'com.google.android.gms:play-services-games:21.0.0'
     api project(':love')
 }
